@@ -1,0 +1,38 @@
+<html>
+<head>
+<style>
+  .arrow-connector {
+    stroke: black;
+  }
+  #one, #two { 
+    position: absolute; 
+    width: 100px;
+    height: 100px;
+  }
+  #one {
+    top: 50px;
+    left: 50px;
+    background: #f0f;
+  }
+  #two {
+    top: 250px;
+    left: 500px;
+    background: #0f0;
+  }
+</style>
+</head>
+
+<body>
+<div id="one" data-arrow-target="#two"></div>
+<div id="two"></div>
+
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="arrowConnector.js"></script>
+<script type="text/javascript">
+var connect = arrowConnector();
+connect();
+d3.select(window).on("resize", connect);
+</script>
+
+</body>
+</html>

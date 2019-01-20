@@ -1,0 +1,1 @@
+const mods = await fetch('mods.json').then(res => res.json());

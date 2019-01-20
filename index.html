@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NUS Module planner</title>
+  <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+  <script src="node_modules/sortablejs/Sortable.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Segoe UI;
+    }
+    body {
+      padding-bottom: 300px;
+    }
+    .wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      margin: 10px;
+      height: 93vh;
+      overflow: hidden;
+    }
+
+    .wrapper .swimlane:nth-child(1) {
+      background: #bbb;
+    }
+    .wrapper .swimlane:nth-child(2) {
+      background: #78c5d5;
+    }
+    .wrapper .swimlane:nth-child(3) {
+      background: #459ba8;
+    }
+    .wrapper .swimlane:nth-child(4) {
+      background: #79c268;
+    }
+    .wrapper .swimlane:nth-child(5) {
+      background: #c5d747;
+    }
+    .wrapper .swimlane:nth-child(6) {
+      background: #f5d63d;
+    }
+    .wrapper .swimlane:nth-child(7) {
+      background: #f18c32;
+    }
+    .wrapper .swimlane:nth-child(8) {
+      background: #e868a1;
+    }
+    .wrapper .swimlane:nth-child(9) {
+      background: #bf63a6;
+    }
+
+    .wrapper svg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    text {
+      user-select: none;
+    }
+    .arrow-connector {
+      stroke: black;
+    }
+
+    .swimlane {
+      width: 150px;
+      border: 1px solid black;
+    }
+
+    .swimlane .title {
+      text-align: center;
+      font-size: 20px;
+      border: 1px solid black;
+      background: white;
+    }
+
+    .swimlane .mod-list {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .mod {
+      width: 90px;
+      height: 50px;
+      text-align: center;
+      padding: 12px;
+      margin-top: 12px;
+      border: 1px solid black;
+      border-radius: 10px;
+    }
+
+    .search {
+      width: 50%;
+      margin: 10px;
+    }
+    #search-input {
+      font-size: 1.1rem;
+      padding: 5px 10px;
+      min-width: 100%;
+    }
+    .search ul {
+      overflow-y: auto;
+      max-height: 13.5rem;
+      padding: 5px 10px;
+    }
+    .trashbin {
+      position: absolute;
+      height: 100px;
+      width: 100%;
+      bottom: 0;
+      padding: 30px;
+      text-align: center;
+      border: 1px solid black;
+      background: linear-gradient(rgba(0,0,0,0), #777);
+      opacity: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="swimlane">
+      <div class="title">
+        Completed
+      </div>
+      <div id="sl-completed" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current sem
+      </div>
+      <div id="sl-current" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +1 sem
+      </div>
+      <div id="sl-current1" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +2 sem
+      </div>
+      <div id="sl-current2" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +3 sem
+      </div>
+      <div id="sl-current3" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +4 sem
+      </div>
+      <div id="sl-current4" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +5 sem
+      </div>
+      <div id="sl-current5" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +6 sem
+      </div>
+      <div id="sl-current6" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +7 sem
+      </div>
+      <div id="sl-current7" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="trashbin">
+      Drop here to remove
+    </div>
+  </div>
+  <div class="search">
+    <input id="search-input" placeholder="Add module to chart" type="text">
+  </div>
+  <!-- <script src="node_modules/d3/dist/d3.js"></script> -->
+  <script src="d3.v3.min.js"></script>
+  <script src="arrowconnector.js"></script>
+  <script src="mods.js"></script>
+  <script>
+    const slCompleted = document.querySelector('#sl-completed');
+    const slCurrent = document.querySelector('#sl-current');
+    const slCurrent1 = document.querySelector('#sl-current1');
+    const slCurrent2 = document.querySelector('#sl-current2');
+    const slCurrent3 = document.querySelector('#sl-current3');
+
+    var viewData = {
+      swimlanes: [
+        { name: 'completed', mods: [] },
+        { name: 'curr', mods: [] },
+        { name: 'curr1', mods: [] },
+        { name: 'curr2', mods: [] },
+        { name: 'curr3', mods: [] }
+      ]
+    };
+    var modsTaking = ['CFG1010', 'CS1010J', 'MA1301', 'IS1103', 'ES1000', 'CS1020', 'CS2100', 'CS1231', 'MA1312', 'MA1521', 'ES1103', 'CS2105', 'CS2102', 'IS2102', 'IS2103', 'ST2334', 'IS2101', 'IS3106', 'IS4100', 'IS3103', 'IS4103'];
+    var svg, defaultNodes;
+
+    function updateGraph() {
+      d3.select('.wrapper svg').remove();
+    
+      if (d3.select('.wrapper svg').empty()) {
+        svg = d3.select(".wrapper").append("svg")
+        // .attr("xmlns", "http://www.w3.org/2000/svg")
+        .style("position", "absolute")
+        .style("top", "32")
+        .style("left", "0")
+        .style("width", "100%")
+        .style("height", "100%");
+      } else {
+        svg = d3.select('.wrapper svg');
+      }
+
+      svg.append("marker")
+        .attr({
+          "id":"arrow",
+          "viewBox":"0 0 10 10",
+          "refX":0,
+          "refY":5,
+          "markerUnits":'strokeWidth',
+          "markerWidth":10,
+          "markerHeight":10,
+          "orient":"auto"
+        })
+        .append("path")
+          .attr("d", "M 0 0 L 10 5 L 0 10 z");
+      
+      var force = d3.layout.force()
+        .gravity(0.05)
+        .charge(-100) // -50
+        .linkDistance(25)
+        .size([svg[0][0].getClientRects()[0].width, svg[0][0].getClientRects()[0].height])
+        .linkStrength(0.005)
+        .friction(0.9)
+        .theta(0.8)
+        .alpha(0.1);
+      var linksFromModsTaking = [];
+      let nodesFromModsTaking = modsTaking.map(e => ({name: e, depth: 1}));
+      modsTaking.forEach((modName, i) => {
+        let currNode = nodesFromModsTaking.find(e => e.name == modName);
+        let mod = mods.find(e => e.ModuleCode == modName); // mod = {ModuleCode: "IS1103", LockedModules: Array(7), LockedBy: Array(0)}
+        let lockedModsTaking = mod.LockedModules.filter(e => -1 !== modsTaking.indexOf(e)); // lockedModsTaking = (2) ["IS3103", "IS4100"]
+        for (m of lockedModsTaking) {
+          linksFromModsTaking.push({ source: i, target: modsTaking.indexOf(m)});
+          let lockedModsTakingToShift = nodesFromModsTaking.find(e => e.name == m && e.depth <= currNode.depth);
+          if (lockedModsTakingToShift) {
+            lockedModsTakingToShift.depth = currNode.depth + 1;
+          }
+        }
+      });
+      defaultNodes = JSON.parse(JSON.stringify(nodesFromModsTaking)); // copy nodesFromModsTaking to be used for validation later
+      var graph = {
+        nodes: nodesFromModsTaking,
+        links: linksFromModsTaking
+      };
+
+      
+      var link = svg.selectAll("line")
+        .data(graph.links)
+        .enter().append("line")
+        .attr('stroke', 'black')
+        .attr('stroke-width', '1')
+        .attr('marker-end', 'url(#arrow)');
+      
+      var node = svg.selectAll('rect')
+        .data(graph.nodes)
+        .enter().append('g')
+        .attr('width', 90)
+        .attr('height', 50)
+        .call(force.drag()
+          .on('dragstart', dragstarted)
+          .on('drag', dragged)
+          .on('dragend', dragended));
+      
+      node.append('rect')
+        .attr('width', 90)
+        .attr('height', 50)
+        .attr('rx', 10)
+        .attr('ry', 10)
+        .attr('fill', 'rgba(255,255,255,0.8)')
+        .attr('stroke', 'black')
+        .attr('stroke-width', 1);
+
+      node.append('text')
+        .attr('x', function(d) {return d.x})
+        .attr('y', function(d) {return d.y})
+        .attr('dominant-baseline', 'middle')
+        .attr('text-anchor', 'middle')
+        .text(function(d) {return d.name});
+      
+      svg.selectAll('text').each(function(d, i) {
+        graph.nodes[i].bb = this.getBBox(); // get bounding box of text field and store it in texts array
+      });
+
+      svg.selectAll('rect')
+        // .attr('x', function(d) { return d.x - d.bb.width/2 - 5; })
+        // .attr('y', function(d) { return d.y - d.bb.height + 5;  })
+        .attr('transform', 'translate(-45, -15)')
+        .attr('width', 90)
+        .attr('height', 30);
+
+      function dragstarted(d) {
+        d3.select('.trashbin')
+          .style('opacity', 1);
+      }
+      function dragged(d) {
+        // console.log('dragged', d);
+      }
+      function dragended(d) {
+        d3.select('.trashbin')
+          .style('opacity', 0);
+        let trashbinY = d3.select('.trashbin')[0][0].getClientRects()[0].y;
+        console.log(trashbinY);
+        if (d.y >= trashbinY) {
+          modsTaking.splice(modsTaking.indexOf(d.name), 1);
+          updateGraph();
+          return;
+        }
+
+        let oldDepth = d.depth;
+        d.depth = parseInt(d.x / 150);
+        if (d.depth == 0) return;
+        // graph.nodes[1].depth = 2;
+        if (d.depth > oldDepth) {
+          shiftRightChain(d);
+        } else if (d.depth < oldDepth) {
+          d.depth = Math.max(d.depth, defaultNodes.find(e => e.name == d.name).depth);
+          shiftLeftChain(d);
+        }
+        function shiftRightChain(nodeShifted) {
+          console.log('shiftRightChain', nodeShifted.name);
+          const mod = mods.find(e => e.ModuleCode == nodeShifted.name);
+          for (lock of mod.LockedModules) {
+            let ingraph = graph.nodes.find(e => e.name == lock);
+            if (ingraph && ingraph.depth <= nodeShifted.depth) {
+              ingraph.depth = nodeShifted.depth + 1;
+              shiftRightChain(ingraph);
+            }
+          }
+        }
+        function shiftLeftChain(nodeShifted) {
+          console.log('shiftLeftChain', nodeShifted.name);
+          const mod = mods.find(e => e.ModuleCode == nodeShifted.name);
+          for (lockedBy of mod.LockedBy) {
+            let ingraph = graph.nodes.find(e => e.name == lockedBy);
+            if (ingraph && ingraph.depth >= nodeShifted.depth) {
+              ingraph.depth = nodeShifted.depth - 1;
+              shiftLeftChain(ingraph);
+            }
+          }
+        }
+        console.log('dragended', d.depth, d.name);
+      }
+
+      function tick() {
+
+        node.each(function (d) {
+          w = 150 * d.depth + 75;
+          d.x -= (0.2 * (d.x - w));
+        });
+
+        node.attr("transform", function (d) { return `translate(${d.x},${d.y})`; });
+
+        link.attr("x1", function (d) { return d.source.x + 45; })
+          .attr("y1", function (d) { return d.source.y; })
+          .attr("x2", function (d) { return d.target.x - 50; })
+          .attr("y2", function (d) { return d.target.y; });
+      }
+
+      force
+        .nodes(graph.nodes)
+        .links(graph.links)
+        .on("tick", tick)
+        .start();
+    }
+    updateGraph();
+
+    // function render() {
+
+    //   connect();
+    // }
+
+    // var connect = arrowConnector();
+    // connect();
+    // d3.select(window).on("resize", connect);
+  </script>
+  <script src="moduleList.js"></script>
+  <script>
+    const search = document.querySelector('.search');
+    const searchInput = document.querySelector('#search-input');
+    searchInput.addEventListener('keyup', e => {
+      let moduleSearchListKeys = Object.keys(moduleList).filter(e => !modsTaking.includes(e));
+      let newVal = e.target.value;
+      let filteredKeys;
+      if (newVal.length <= 2) {
+        filteredKeys = moduleSearchListKeys.filter(e => e.toLowerCase().includes(newVal.toLowerCase()));
+      } else {
+        filteredKeys = moduleSearchListKeys.filter(e => e.toLowerCase().includes(newVal.toLowerCase()) || moduleList[e].toLowerCase().includes(newVal.toLowerCase()));
+      }
+      if (search.querySelector('.search-result')) {
+        search.removeChild(search.querySelector('.search-result'));
+      }
+      if (filteredKeys.length != 0) {
+        let ul = document.createElement('ul');
+        ul.classList.add('search-result');
+        for (key of filteredKeys) {
+          let li = document.createElement('li');
+          li.textContent = key + ' ' + moduleList[key];
+          li.setAttribute('moduleCode', key);
+          li.classList.add('moduleItem');
+          let lockedBy = mods.find(e => e.ModuleCode == key).LockedBy;
+          const colors = ['#78c5d5','#459ba8','#79c268','#c5d747','#f5d63d','#f18c32','#e868a1','#bf63a6']
+          for (let i = colors.length - 1; i > 0; i--) {
+            // ++i; // e.depth is 1 indexed and the colour array doesnt include the first gray completed colour
+            if (defaultNodes.filter(e => e.depth == (i + 1) && lockedBy.includes(e.name)).length > 0) {
+              li.style.background = colors[i+1];
+              break;
+            }
+          }
+          if (!li.style.background) {
+            li.style.background = '#78c5d5';
+          }
+          ul.appendChild(li);
+        }
+        search.appendChild(ul);
+      } else {
+        let div = document.createElement('div');
+        div.classList.add('search-result');
+        div.textContent = 'No modules found :(';
+        search.appendChild(div);
+      }
+    });
+    search.addEventListener('click', e => {
+      if (e.target.classList.contains('moduleItem')) {
+        // reset search ui
+        searchInput.value = '';
+        search.removeChild(search.lastChild);
+        // add module to graph
+        modsTaking.push(e.target.getAttribute('moduleCode'));
+        updateGraph();
+      }
+    });
+  </script>
+</body>
+
+</html>

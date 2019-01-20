@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NUS Mods planner</title>
+  <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+  <script src="node_modules/sortablejs/Sortable.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Consolas;
+    }
+
+    .wrapper {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      margin: 30px;
+      height: 90vh;
+    }
+
+    .wrapper svg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    .arrow-connector {
+      stroke: black;
+    }
+
+    .swimlane {
+      width: 150px;
+      border: 1px solid black;
+    }
+
+    .swimlane .title {
+      text-align: center;
+      font-size: 20px;
+      border: 1px solid black;
+    }
+
+    .swimlane .mod-list {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .mod {
+      width: 90px;
+      height: 50px;
+      text-align: center;
+      padding: 12px;
+      margin-top: 12px;
+      border: 1px solid black;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- <div id="example2-left" class="list-group col">
+    <div class="list-group-item">Item 1</div>
+    <div class="list-group-item">Item 2</div>
+    <div class="list-group-item">Item 3</div>
+    <div class="list-group-item">Item 4</div>
+    <div class="list-group-item">Item 5</div>
+    <div class="list-group-item">Item 6</div>
+  </div>
+  <div id="example2-right" class="list-group col">
+    <div class="list-group-item tinted">Item 1</div>
+    <div class="list-group-item tinted">Item 2</div>
+    <div class="list-group-item tinted">Item 3</div>
+    <div class="list-group-item tinted">Item 4</div>
+    <div class="list-group-item tinted">Item 5</div>
+    <div class="list-group-item tinted">Item 6</div>
+  </div> -->
+  <div class="wrapper">
+    <div class="swimlane">
+      <div class="title">
+        Completed
+      </div>
+      <div id="sl-completed" class="mod-list list-group">
+        <div id="cs1010" class="mod" data-arrow-target="#cs1231,#cs3000">
+          CS1010
+        </div>
+        <div id="cs3000" class="mod" data-arrow-target="#cs1231 #cs3000">
+          CS3000
+        </div>
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current sem
+      </div>
+      <div id="sl-current" class="mod-list list-group">
+        <div id="cs1231" class="mod">
+          CS1231
+        </div>
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +1
+      </div>
+      <div id="sl-current1" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +2
+      </div>
+      <div id="sl-current2" class="mod-list list-group">
+      </div>
+    </div>
+    <div class="swimlane">
+      <div class="title">
+        Current +3
+      </div>
+      <div id="sl-current3" class="mod-list list-group">
+      </div>
+    </div>
+  </div>
+  <script src="node_modules/d3/dist/d3.js"></script>
+  <!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
+  <script src="arrowconnector.js"></script>
+  <script src="data.js"></script>
+  <script>
+    const slCompleted = document.querySelector('#sl-completed');
+    const slCurrent = document.querySelector('#sl-current');
+    const slCurrent1 = document.querySelector('#sl-current1');
+    const slCurrent2 = document.querySelector('#sl-current2');
+    const slCurrent3 = document.querySelector('#sl-current3');
+
+    var viewData = {
+      swimlanes: [
+        { name: 'completed', mods: [] },
+        { name: 'curr', mods: [] },
+        { name: 'curr1', mods: [] },
+        { name: 'curr2', mods: [] },
+        { name: 'curr3', mods: [] }
+      ]
+    };
+
+    const sortableConfig = {
+      group: 'shared', // set both lists to same group
+      animation: 150,
+      draggable: '.mod',
+      onSort: evt => {
+        console.log(evt.item.id, evt.from.id, evt.to.id);
+        setTimeout(render, 200);
+        var itemEl = evt.item;  // dragged HTMLElement
+        evt.to;    // target list
+        evt.from;  // previous list
+        evt.oldIndex;  // element's old index within old parent
+        evt.newIndex;  // element's new index within new parent
+      }
+    };
+    new Sortable(slCompleted, sortableConfig);
+    new Sortable(slCurrent, sortableConfig);
+    new Sortable(slCurrent1, sortableConfig);
+    new Sortable(slCurrent2, sortableConfig);
+    new Sortable(slCurrent3, sortableConfig);
+
+    function render() {
+
+      connect();
+    }
+
+    var connect = arrowConnector();
+    connect();
+    d3.select(window).on("resize", connect);
+  </script>
+</body>
+
+</html>
