@@ -238,7 +238,7 @@
         .attr({
           "id":"arrow",
           "viewBox":"0 0 10 10",
-          "refX":0,
+          "refX":10,
           "refY":5,
           "markerUnits":'strokeWidth',
           "markerWidth":10,
@@ -384,10 +384,50 @@
 
         node.attr("transform", function (d) { return `translate(${d.x},${d.y})`; });
 
-        link.attr("x1", function (d) { return d.source.x + 45; })
-          .attr("y1", function (d) { return d.source.y; })
-          .attr("x2", function (d) { return d.target.x - 50; })
-          .attr("y2", function (d) { return d.target.y; });
+        // link.attr("x1", function (d) { return d.source.x })
+        //   .attr("y1", function (d) { return d.source.y; })
+        //   .attr("x2", function (d) { return d.target.x; })
+        //   .attr("y2", function (d) { return d.target.y; });
+
+        link.attr("x1", function (d) { return calcTargetRectEdgeIntersect(d.target.x, d.target.y, d.source.x, d.source.y)[0]; })
+          .attr("y1", function (d) { return calcTargetRectEdgeIntersect(d.target.x, d.target.y, d.source.x, d.source.y)[1]; })
+          .attr("x2", function (d) { return calcTargetRectEdgeIntersect(d.source.x, d.source.y, d.target.x, d.target.y)[0]; })
+          .attr("y2", function (d) { return calcTargetRectEdgeIntersect(d.source.x, d.source.y, d.target.x, d.target.y)[1]; });
+
+        function calcTargetRectEdgeIntersect(fromX, fromY, toX, toY, height = 30, width = 90) {
+          // const height = 30;
+          // const width = 90;
+          const edgeLeftX = toX - width / 2;
+          const edgeRightX = toX + width / 2;
+          const edgeTopY = toY - height / 2;
+          const edgeBottomY = toY + height / 2;
+          const aspectRatio = height / width; // target rect's aspect ratio for angle from bottom edge to top right corner
+          const deltaX = toX - fromX;
+          const deltaY = toY - fromY;
+          const absGradient = Math.abs(deltaY) / Math.abs(deltaX);
+          // formula parameters: y = mx + (b - ma) or x = y/m + (a - b/m)
+          // a = fromX, b = fromY
+          const m = (toY - fromY) / (toX - fromX);
+          function calcY(x) {
+            return m * x + (fromY - m * fromX);
+          }
+          function calcX(y) {
+            return y / m + (fromX - fromY / m);
+          }
+          if (absGradient < aspectRatio) { // left or right edges
+            if (deltaX > 0) { // left edge
+              return [edgeLeftX, calcY(edgeLeftX)];
+            } else { // right edge
+              return [edgeRightX, calcY(edgeRightX)];
+            }
+          } else { // top or bottom edges
+            if (deltaY > 0) { // top edge cos y increases downwards in D3
+              return [calcX(edgeTopY), edgeTopY];
+            } else { // bottom edge
+              return [calcX(edgeBottomY), edgeBottomY];
+            }
+          }
+        }
       }
 
       force
